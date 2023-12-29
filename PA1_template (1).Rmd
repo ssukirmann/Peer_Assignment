@@ -1,0 +1,83 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+```{r}
+dat <- read.csv("activity.csv")
+dat$date <- as.Date(dat$date, format = "%Y-%m-%d")
+```
+
+
+## What is mean total number of steps taken per day?
+```{r}
+TotalSteps <- aggregate(steps~date,data= dat,sum, na.rm=TRUE)
+hist(TotalSteps$steps, breaks = 50, main = "Total steps taken per day", 
+     xlab = "steps", ylab = "Frequency", col = "grey", axes = FALSE)
+axis(1)
+axis(2, las=1)
+
+mean(TotalSteps$steps)
+median(TotalSteps$steps)
+```
+
+
+## What is the average daily activity pattern?
+```{r}
+AvStep <- aggregate(steps~interval, data= dat, mean, na.rm= TRUE)
+plot(AvStep$interval, AvStep$steps, type= "l", lwd= 2, col= "blue",
+     main= "Average steps", axes = FALSE,
+     xlab= "interval (5 minutes)",
+     ylab= "average steps")
+axis(1)
+axis(2,las=1)
+
+AvStep$interval[which.max(AvStep$steps)]
+```
+
+
+## Imputing missing values
+```{r}
+sum(is.na(dat))
+
+impute <-dat
+for (i in AvStep$interval){
+        impute[impute$interval ==i & is.na(impute$steps), ]$steps <- 
+                AvStep$steps[AvStep$interval== i]
+}
+head(impute)
+
+totalsteps_impute <- aggregate(steps~date, data = impute, sum, na.rm= TRUE)
+hist(totalsteps_impute$steps, breaks = 20, 
+     main= "Imputed total steps taken per day", 
+     col = "grey", border = "white", xlab = "Steps", axes = FALSE)
+axis(1)
+axis(2, las = 1)
+
+mean(totalsteps_impute$steps)
+
+median(totalsteps_impute$steps)
+```
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+impute$day <- weekdays(impute$date)
+impute$week <- ""
+impute[impute$day =="Saturday" | impute$day == "Sunday", ]$week <- "weekend"
+impute[!(impute$day =="Saturday" | impute$day =="Sunday"),]$week <- "weekday"
+impute$week <- factor(impute$week)
+
+AvStep_impute <- aggregate(steps~interval+ week, data = impute, mean)
+library(lattice)
+xyplot(steps~interval|week, data = AvStep_impute, type= "l", lwd=2,
+       col= "purple", layout= c(1,2), xlab = "5 mins interval", ylab = "average number of steps", 
+       main= "average steps taken divided by weekday or weekend")
+```
+
+
+
